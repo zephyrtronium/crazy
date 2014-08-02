@@ -21,7 +21,7 @@ func (u Uniform1_2) Next() float64 {
 	return math.Float64frombits(binary.LittleEndian.Uint64(b[:]) | 0x3fff000000000000)
 }
 
-// Produce numbers in the interval [0, 1).
+// Produce numbers in the interval [Low, High).
 type Uniform struct {
 	Source
 	Low, High float64
