@@ -26,6 +26,19 @@ func (x XorCompose) Read(p []byte) (int, error) {
 	return len(p), nil
 }
 
+// Create a random string with specified length using only characters from the
+// given alphabet. The mechanism for constructing the string is choosing random
+// positions from the alphabet, so characters which appear more often have
+// higher relative probability.
+func RandString(rng RNG, alphabet string, length int) string {
+	p := make([]rune, length)
+	a := []rune(alphabet)
+	for i := range p {
+		p[i] = a[int(rng.Uintn(uint(len(a))))]
+	}
+	return string(p)
+}
+
 // Swapping interface for shuffling.
 type Swapper interface {
 	Swap(i, j int)
