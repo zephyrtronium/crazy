@@ -1,7 +1,7 @@
 package crazy
 
 // Generalized ziggurat algorithm for producing random values according to any
-// decreasing density. See http://www.jstatsoft.org/v05/i08/paper [PDF].
+// monotone decreasing density. See http://www.jstatsoft.org/v05/i08/paper.
 type Ziggurat struct {
 	// Probability density function for the desired distribution.
 	PDF func(x float64) float64
