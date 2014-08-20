@@ -7,6 +7,8 @@ program is as simple as providing the pdf, e.g.
 
 	python3 ziggurat.py "exp(-0.5*x*x)" >normal.out
 
+You can also provide `-h` to get a list of options.
+
 The parameters will be calculated with periodic updates printed to stderr and
 the results printed to stdout in Go syntax.
 

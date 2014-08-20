@@ -28,6 +28,8 @@ program is as simple as providing the pdf, e.g.
 
 	python3 ziggurat.py "exp(-0.5*x*x)" >normal.out
 
+You can also provide -h to get a list of options.
+
 The parameters will be calculated with periodic updates printed to stderr and
 the results printed to stdout in Go syntax.
 
@@ -138,16 +140,59 @@ var F = [{n}]float32{{{fi}}}
 		fi=', '.join(str(i) for i in fi),
 	)
 
-def main(*args):
-	e = compile(args[0], '<f>', 'eval')
+def main(fn, x0=None, nseg=128, verbose=False):
+	e = compile(fn, '<f>', 'eval')
 	globs = mpmath.__dict__
 	globs['__builtins__'] = None
-	mpmath.mp.prec = 80
+	lastprec, mpmath.mp.prec = mpmath.mp.prec, 80
 	f = lambda x: eval(e, globs, {'x': x})
-	r, v, xi = solve(f, verbose=True)
-	ki, wi, fi = tables(f, r, v, xi, verbose=True)
-	mpmath.mp.prec = 53
+	r, v, xi = solve(f, x0, nseg, verbose)
+	ki, wi, fi = tables(f, r, v, xi, verbose)
+	mpmath.mp.prec = lastprec
 	print(format(r, v, xi, ki, wi, fi))
 
+def parseargs(args):
+	x0, nseg, verbose = None, 128, True
+	fn = None
+	helped = False
+	while args:
+		if args[0] in ('-h', '-?', '-help', '--help'):
+			print(help, file=sys.stderr)
+			helped = True
+			args = args[1:]
+		elif args[0] == '-x0':
+			x0 = mpmath.mpf(args[1])
+			args = args[2:]
+		elif args[0] == '-nseg':
+			nseg = int(args[1])
+			args = args[2:]
+		elif args[0] in ('-q', '-quiet'):
+			verbose = False
+			args = args[1:]
+		elif fn is None:
+			fn = args[0]
+			args = args[1:]
+		else:
+			raise ValueError('bad argument: ' + args[0])
+	assert fn is not None or helped, help
+	return (fn, x0, nseg, verbose), helped
+
+help = '''
+
+python3 ziggurat.py [options] <pdf>
+
+Options:
+	-x0 float
+		use the given value as the initial guess for r
+	-nseg int
+		calculate the ziggurat with the given number of segments
+	-q, -quiet
+		don't print progress
+	-h, -?, -help, --help
+		print this message
+'''
+
 if __name__ == '__main__':
-	main(*sys.argv[1:])
+	a, helped = parseargs(sys.argv[1:])
+	if a[0] is not None:
+		main(*a)
