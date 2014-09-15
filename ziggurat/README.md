@@ -5,7 +5,7 @@ The program uses mpmath for quadrature of the pdf's tail as well as to provide
 a wide variety of mathematical functions for the use of the pdf. Calling the
 program is as simple as providing the pdf, e.g.
 
-	python3 ziggurat.py "exp(-0.5*x*x)" >normal.out
+	python3 ziggurat.py -symmetric "exp(-0.5*x*x)" >normal.out
 
 You can also provide `-h` to get a list of options.
 
