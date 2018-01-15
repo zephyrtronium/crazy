@@ -9,19 +9,14 @@ import (
 // XorCompose composes two Sources using XOR.
 type XorCompose struct {
 	A, B Source
-	buf  []byte
 }
 
 // Read produces random bits from the composition of the two sources: A ^ B.
 func (x XorCompose) Read(p []byte) (int, error) {
-	if cap(x.buf) < len(p) {
-		x.buf = make([]byte, len(p))
-	} else {
-		x.buf = x.buf[:len(p)]
-	}
+	buf := make([]byte, len(p))
 	x.A.Read(p)
-	x.B.Read(x.buf)
-	for i, v := range x.buf {
+	x.B.Read(buf)
+	for i, v := range buf {
 		p[i] ^= v
 	}
 	return len(p), nil
