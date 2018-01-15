@@ -27,6 +27,24 @@ func (x XorCompose) Read(p []byte) (int, error) {
 	return len(p), nil
 }
 
+// SelectCompose composes three sources such that each bit of S chooses which
+// of A and B has its corresponding bit chosen.
+type SelectCompose struct {
+	S, A, B Source
+}
+
+// Read produces random bits selected randomly between A and B.
+func (x SelectCompose) Read(p []byte) (int, error) {
+	s, b := make([]byte, len(p)), make([]byte, len(p))
+	x.S.Read(s)
+	x.A.Read(p)
+	x.B.Read(b)
+	for i := range p {
+		p[i] ^= (p[i] ^ b[i]) & s[i]
+	}
+	return len(p), nil
+}
+
 type math2crazy struct {
 	mathrand.Source
 }
