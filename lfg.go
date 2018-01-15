@@ -10,27 +10,29 @@ const (
 	lfgK = 607
 )
 
-// Lagged Fibonacci generator. Numbers are produced under the recurrence
-// S[n] = f(S[n-j], S[n-k]) (mod m), 0 < j < k. For the sake of speed, this
-// implementation defines f(x, y) = x + y, j = 273, k = 607, m = 2**64. This
-// yields a period of (2**k - 1) * m/2 = 2**670 - 63.
+// LFG implements a lagged Fibonacci generator. Numbers are produced under the
+// recurrence S[n] = f(S[n-j], S[n-k]) (mod m), 0 < j < k. For the sake of
+// speed, this implementation defines f(x, y) = x + y, j = 273, k = 607,
+// m = 2**64. This yields a period of (2**k - 1) * m/2 = 2**670 - 63.
 type LFG struct {
 	f, t int
 	s    [lfgK]uint64
 }
 
-// Produce an unseeded LFG. Call either lfg.Seed[IV]() or lfg.Restore() prior
-// to use.
+// NewLFG produces an unseeded LFG. Call either lfg.Seed[IV]() or lfg.Restore()
+// prior to use.
 func NewLFG() *LFG {
 	return &LFG{f: lfgK - lfgJ}
 }
 
-// SeedInt64(lfg, x). This serves to satisfy the rand.Source interface.
+// Seed calls SeedInt64(lfg, x). This serves to satisfy the rand.Source
+// interface.
 func (lfg *LFG) Seed(x int64) {
 	SeedInt64(lfg, x)
 }
 
-// Seed the generator using all bits of iv, which may be of any size or nil.
+// SeedIV initializes the generator using all bits of iv, which may be of any
+// size or nil.
 func (lfg *LFG) SeedIV(iv []byte) {
 	lfg.f, lfg.t = lfgK-lfgJ, 0
 	copy(lfg.s[:], lfgS0[:])
@@ -55,8 +57,8 @@ func (lfg *LFG) next() uint64 {
 	return x
 }
 
-// Fill p with random bytes generated 64 bits at a time, discarding unused
-// bytes. n will always be len(p) and err will always be nil.
+// Read fills p with random bytes generated 64 bits at a time, discarding
+// unused bytes. n will always be len(p) and err will always be nil.
 func (lfg *LFG) Read(p []byte) (n int, err error) {
 	n = len(p)
 	for len(p) >= 8 {
@@ -69,15 +71,15 @@ func (lfg *LFG) Read(p []byte) (n int, err error) {
 	return n, nil
 }
 
-// Generate an integer in the interval [0, 2**63 - 1]. This serves to satisfy
-// the rand.Source interface.
+// Int63 generates an integer in the interval [0, 2**63 - 1]. This serves to
+// satisfy the rand.Source interface.
 func (lfg *LFG) Int63() int64 {
 	return int64(lfg.next() >> 1)
 }
 
-// Save the current state of the LFG. Values produced by an LFG that has
-// Restore()d this state are guaranteed to match those produced by this exact
-// generator. n should always be K*8 = 4856 bytes.
+// Save serializes the current state of the LFG. Values produced by an LFG that
+// has Restore()d this state are guaranteed to match those produced by this
+// exact generator. n should always be K*8 = 4856 bytes.
 func (lfg *LFG) Save(into io.Writer) (n int, err error) {
 	p := [lfgK * 8]byte{}
 	// We avoid having to save f and t by rotating the LFG's ring buffer such
@@ -91,7 +93,7 @@ func (lfg *LFG) Save(into io.Writer) (n int, err error) {
 	return into.Write(p[:])
 }
 
-// Restore a Save()d LFG state. This reads K*8 = 4856 bytes as the last K
+// Restore loads a Save()d LFG state. This reads K*8 = 4856 bytes as the last K
 // values of the LFG.
 func (lfg *LFG) Restore(from io.Reader) (n int, err error) {
 	p := [lfgK * 8]byte{}

@@ -2,15 +2,16 @@ package crazy
 
 import "math"
 
-// Generate random numbers under an exponential distribution.
+// Exponential adapts a Source to generate random numbers under an exponential
+// distribution.
 type Exponential struct {
 	Source
 	z    *Ziggurat
 	Rate float64
 }
 
-// Create an exponential distribution drawing from the specified source with
-// given rate parameter.
+// NewExponential creates an exponential distribution drawing from the
+// specified source with given rate parameter.
 func NewExponential(src Source, rate float64) Exponential {
 	return Exponential{
 		Source: src,
@@ -19,7 +20,7 @@ func NewExponential(src Source, rate float64) Exponential {
 	}
 }
 
-// Generate a number.
+// Next generates an exponential variate.
 func (e Exponential) Next() float64 {
 	x := e.z.GenNext(e.Source)
 	return x / e.Rate

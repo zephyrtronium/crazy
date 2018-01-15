@@ -11,20 +11,21 @@ const (
 	mt64A uint64 = 0xB5026F5AA96619E9
 )
 
-// 64-bit Mersenne twister. The choice of parameters yields a period of
-// 2**19937 - 1.
+// MT64 is a 64-bit Mersenne twister. The choice of parameters yields a period
+// of 2**19937 - 1.
 type MT64 struct {
 	i int
 	s [mt64N]uint64
 }
 
-// Produce an unseeded 64-bit Mersenne twister. Call mt.Seed[IV]() or
+// NewMT64 produces an unseeded 64-bit Mersenne twister. Call mt.Seed[IV]() or
 // mt.Restore() prior to use.
 func NewMT64() *MT64 {
 	return &MT64{}
 }
 
-// Seed using an int64. This serves to satisfy the rand.Source interface.
+// Seed initializes mt using an int64. This serves to satisfy the rand.Source
+// interface.
 func (mt *MT64) Seed(seed int64) {
 	mt.s[0] = uint64(seed)
 	for i := 1; i < mt64N; i++ {
@@ -33,14 +34,16 @@ func (mt *MT64) Seed(seed int64) {
 	mt.i = mt64N
 }
 
-// Seed the generator using all bits of iv, which may be of any size or nil.
+// SeedIV initializes the generator using all bits of iv, which may be of any
+// size or nil.
 func (mt *MT64) SeedIV(iv []byte) {
 	mt.Seed(19650218)
 	if len(iv) == 0 {
 		return
 	}
 	if len(iv)&7 != 0 {
-		// we need a multiple of 8
+		// We need a multiple of 8, but we don't really own iv, so we'll make a
+		// copy with the right length.
 		t := make([]byte, len(iv)+8-len(iv)&7)
 		copy(t, iv)
 		iv = t
@@ -99,8 +102,8 @@ func (mt *MT64) next() uint64 {
 	return x
 }
 
-// Fill p with random bytes generated 64 bits at a time, discarding unused
-// bytes. n will always be len(p) and err will always be nil.
+// Read fills p with random bytes generated 64 bits at a time, discarding
+// unused bytes. n will always be len(p) and err will always be nil.
 func (mt *MT64) Read(p []byte) (n int, err error) {
 	n = len(p)
 	for len(p) >= 8 {
@@ -113,19 +116,21 @@ func (mt *MT64) Read(p []byte) (n int, err error) {
 	return n, nil
 }
 
-// Generate an integer in the interval [0, 2**63 - 1]. This serves to satisfy
-// the rand.Source interface.
+// Int63 generates an integer in the interval [0, 2**63 - 1]. This serves to
+// satisfy the rand.Source interface.
 func (mt *MT64) Int63() int64 {
 	return int64(mt.next() >> 1)
 }
 
-// Save the current state of the Mersenne twister. Values produced by an MT
-// that has Restore()d this state are guaranteed to match those produced by
-// this exact generator. n should always be 2 + N*8 = 2498 bytes.
+// Save serializes the current state of the Mersenne twister. Values produced
+// by an MT that has Restore()d this state are guaranteed to match those
+// produced by this exact generator. n should always be 2 + N*8 = 2498 bytes.
 func (mt *MT64) Save(into io.Writer) (n int, err error) {
-	// Unlike with LFG, we can't get away without saving mt.i, so we have to
+	// Unlike with LFG, we can't* get away without saving mt.i, so we have to
 	// spend an extra two bytes. That said, the state size of this is actually
 	// much smaller than that of LFG.
+	// *It is possible to produce a rotation of the MT state, but much more
+	// expensive, and I don't feel like figuring out how to do it anyway.
 	p := [2 + mt64N*8]byte{}
 	for i, v := range mt.s {
 		binary.LittleEndian.PutUint64(p[i<<3:], v)
@@ -136,8 +141,8 @@ func (mt *MT64) Save(into io.Writer) (n int, err error) {
 	return into.Write(p[:])
 }
 
-// Restore a Save()d MT state. This reads 2 + N*8 = 2498 bytes as the feed and
-// state values.
+// Restore loads a Save()d MT state. This reads 2 + N*8 = 2498 bytes as the
+// feed and state values.
 func (mt *MT64) Restore(from io.Reader) (n int, err error) {
 	p := [2 + mt64N*8]byte{}
 	if n, err = from.Read(p[:]); err != nil {

@@ -6,13 +6,13 @@ import (
 	mathrand "math/rand"
 )
 
-// Compose two Sources using XOR.
+// XorCompose composes two Sources using XOR.
 type XorCompose struct {
 	A, B Source
 	buf  []byte
 }
 
-// A ^ B
+// Read produces random bits from the composition of the two sources: A ^ B.
 func (x XorCompose) Read(p []byte) (int, error) {
 	if cap(x.buf) < len(p) {
 		x.buf = make([]byte, len(p))
@@ -31,8 +31,8 @@ type math2crazy struct {
 	mathrand.Source
 }
 
-// Adapt a math/rand Source into a crazy Seeder. If the argument already
-// implements Seeder, it is returned directly. Otherwise, to preserve
+// AdaptRand turns a math/rand Source into a crazy Seeder. If the argument
+// already implements Seeder, it is returned directly. Otherwise, to preserve
 // equidistribution, the Read() method of this Seeder uses two Int63() calls
 // per eight bytes of output, using one fewer call when the output is not
 // divisible by 8. Additionally, the SeedIV() method uses only up to the first
@@ -70,8 +70,8 @@ type crazy2math struct {
 	Seeder
 }
 
-// Adapt a crazy Seeder into a math/rand Source. If the argument already
-// implements math/rand.Source, it is returned directly.
+// AdaptCrazy turns a crazy Seeder into a math/rand Source. If the argument
+// already implements math/rand.Source, it is returned directly.
 func AdaptCrazy(src Seeder) mathrand.Source {
 	if m, ok := src.(mathrand.Source); ok {
 		return m
@@ -87,10 +87,10 @@ func (c crazy2math) Seed(x int64) {
 	SeedInt64(c.Seeder, x)
 }
 
-// Create a random string with specified length using only characters from the
-// given alphabet. The mechanism for constructing the string is choosing random
-// positions from the alphabet, so characters which appear more often have
-// higher relative probability.
+// RandString creates a random string with specified length using only
+// characters from the given alphabet. The mechanism for constructing the
+// string is choosing random positions from the alphabet, so characters which
+// appear more often have higher relative probability.
 func RandString(rng RNG, alphabet string, length int) string {
 	p := make([]rune, length)
 	a := []rune(alphabet)
@@ -100,13 +100,14 @@ func RandString(rng RNG, alphabet string, length int) string {
 	return string(p)
 }
 
-// Swapping interface for shuffling.
+// Swapper provides an interface for shuffling. This is a strict subset of
+// sort.Interface.
 type Swapper interface {
 	Swap(i, j int)
 	Len() int
 }
 
-// Permute the elements of data into a random order.
+// Shuffle permutes the elements of data into a random order.
 func Shuffle(data Swapper, rng RNG) {
 	n := data.Len()
 	for i := 0; i < n; i++ {
@@ -114,9 +115,9 @@ func Shuffle(data Swapper, rng RNG) {
 	}
 }
 
-// Yield values generated from the given distribution. Stop once a value is
-// received over the quit channel, if that channel is not nil. Useful for
-// synchronizing a distribution between multiple goroutines.
+// Yield sends values generated from the given distribution. It stops and
+// returns once a value is received over the quit channel, if that channel is
+// not nil. Useful for safely accessing variates from multiple goroutines.
 func Yield(from Distribution, over chan<- float64, quit <-chan struct{}) {
 	go func() {
 		for {
@@ -129,9 +130,9 @@ func Yield(from Distribution, over chan<- float64, quit <-chan struct{}) {
 	}()
 }
 
-// Yield uint64s from the given RNG. Stop once a value is received over the
-// quit channel, if that channel is not nil. Useful for synchronizing a
-// distribution between multiple goroutines.
+// YieldUint64 sends uint64s from the given RNG. It stops and returns once a
+// value is received over the quit channel, if that channel is not nil. Useful
+// for safely accessing values from multiple goroutines.
 func YieldUint64(from RNG, over chan<- uint64, quit <-chan struct{}) {
 	go func() {
 		for {
@@ -144,17 +145,20 @@ func YieldUint64(from RNG, over chan<- uint64, quit <-chan struct{}) {
 	}()
 }
 
-// Tell a yielder to stop.
+// StopYielding is a value to tell a yielder to stop. You can also close the
+// quit channel if you won't need it again.
 var StopYielding struct{}
 
-// Seed a Seeder using an int64.
+// SeedInt64 seeds a Seeder using an int64. Specifically, it uses the
+// little-endian representation of the int64 as the initialization vector.
 func SeedInt64(src Seeder, seed int64) {
 	b := [8]byte{}
 	binary.LittleEndian.PutUint64(b[:], uint64(seed))
 	src.SeedIV(b[:])
 }
 
-// Seed a Seeder with n random bytes from crypto/rand.Reader. Returns src.
+// CryptoSeeded seeds a Seeder with n random bytes from crypto/rand.Reader and
+// returns src.
 func CryptoSeeded(src Seeder, n int) Seeder {
 	iv := make([]byte, n)
 	rand.Read(iv)

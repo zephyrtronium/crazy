@@ -9,9 +9,9 @@ a Source into numbers is the job of RNGs (for integers) and Distributions (for
 floats).
 
 Not all randomness sources, especially including crypto/rand, can be seeded.
-Crazy supports this concept by splitting seeding into a separate interface. Of
-course, since (most) PRNGs have much more entropy than can be encoded in 64
-bits, seeding is done with []byte instead of int64.
+Crazy supports this concept by splitting seeding into a separate interface.
+Since (most) PRNGs have much more entropy than can be encoded in 64 bits,
+seeding is done with []byte instead of int64.
 
 Sometimes people want to save and restore exact PRNG states. math/rand seems to
 assume that seeding is enough, but a crazy Saver allows a PRNG to be saved into
@@ -20,8 +20,8 @@ any io.Writer and restored from any io.Reader.
 Currently implemented PRNGs are LFG(273, 607) and MT64-19937.
 crypto/rand.Reader naturally implements Source.
 
-The only currently implemented distribution is the normal one, but the ziggurat
-directory contains a Python script to calculate the necessary parameters for
-any applicable distribution.
+The only currently implemented distributions are normal and exponential, but
+the ziggurat directory contains a Python script to calculate the necessary
+parameters for any monotonically decreasing distribution.
 */
 package crazy

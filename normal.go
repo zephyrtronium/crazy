@@ -2,15 +2,16 @@ package crazy
 
 import "math"
 
-// Generate random numbers under a normal distribution.
+// Normal adapts a Source to produce random numbers under a normal
+// distribution.
 type Normal struct {
 	Source
 	z            *Ziggurat
 	Mean, StdDev float64
 }
 
-// Create a normal distribution drawing from the specified source with given
-// mean and standard deviation.
+// NewNormal creates a normal distribution drawing from the specified source
+// with given mean and standard deviation.
 func NewNormal(src Source, mean, stddev float64) Normal {
 	return Normal{
 		Source: src,
@@ -20,7 +21,7 @@ func NewNormal(src Source, mean, stddev float64) Normal {
 	}
 }
 
-// Generate a number.
+// Next generates a normal variate.
 func (n Normal) Next() float64 {
 	x := n.z.GenNext(n.Source)
 	return n.Mean + x*n.StdDev

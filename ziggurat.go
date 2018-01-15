@@ -1,7 +1,8 @@
 package crazy
 
-// Generalized ziggurat algorithm for producing random values according to any
-// monotone decreasing density. See http://www.jstatsoft.org/v05/i08/paper.
+// Ziggurat implements a generalized ziggurat algorithm for producing random
+// values according to any monotone decreasing density. See
+// http://www.jstatsoft.org/v05/i08/paper.
 type Ziggurat struct {
 	// Probability density function for the desired distribution.
 	PDF func(x float64) float64
@@ -23,7 +24,7 @@ type Ziggurat struct {
 	F [128]float32
 }
 
-// Generate a value distributed according to the ziggurat.
+// GenNext generates a value distributed according to the ziggurat.
 func (z *Ziggurat) GenNext(src Source) float64 {
 	for {
 		j := int32(RNG{src}.Uint32())
