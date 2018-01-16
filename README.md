@@ -15,6 +15,6 @@ Crazy rejects certain basic assumptions taken by math/rand, including:
 Currently implemented PRNGs are LFG(273, 607) and MT64-19937.
 crypto/rand.Reader naturally implements Source.
 
-The only currently implemented distribution is the normal one, but the ziggurat
-directory contains a Python script to calculate the necessary parameters for
-any applicable distribution.
+The only currently implemented distributions are normal and exponential, but
+the ziggurat directory contains a Python script to calculate the necessary
+parameters for any monotonically decreasing distribution.
