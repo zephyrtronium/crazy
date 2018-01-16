@@ -179,6 +179,7 @@ def parseargs(args):
 			args = args[2:]
 		elif args[0] == '-prec':
 			prec = int(args[1])
+			args = args[2:]
 		elif args[0] in ('-q', '-quiet'):
 			verbose = False
 			args = args[1:]
