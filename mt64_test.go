@@ -47,3 +47,13 @@ func TestMT64Save(t *testing.T) {
 		b.Reset()
 	}
 }
+
+func BenchmarkMT64(b *testing.B) {
+	mt := CryptoSeeded(NewMT64(), mt64N).(*MT64)
+	p := make([]byte, 1<<30)
+	b.SetBytes(int64(len(p)))
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		mt.Read(p)
+	}
+}

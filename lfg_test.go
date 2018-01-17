@@ -47,3 +47,13 @@ func TestLFGSave(t *testing.T) {
 		b.Reset()
 	}
 }
+
+func BenchmarkLFG(b *testing.B) {
+	lfg := CryptoSeeded(NewLFG(), lfgK).(*LFG)
+	p := make([]byte, 1<<30)
+	b.SetBytes(int64(len(p)))
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		lfg.Read(p)
+	}
+}
