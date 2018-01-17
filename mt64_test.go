@@ -50,10 +50,16 @@ func TestMT64Save(t *testing.T) {
 
 func BenchmarkMT64(b *testing.B) {
 	mt := CryptoSeeded(NewMT64(), mt64N).(*MT64)
-	p := make([]byte, 1<<30)
-	b.SetBytes(int64(len(p)))
-	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
-		mt.Read(p)
+	f := func(p []byte) func(b *testing.B) {
+		return func(b *testing.B) {
+			b.SetBytes(int64(len(p)))
+			for n := 0; n < b.N; n++ {
+				mt.Read(p)
+			}
+		}
 	}
+	b.Run("8", f(make([]byte, 8)))
+	b.Run("K", f(make([]byte, 1<<10)))
+	b.Run("M", f(make([]byte, 1<<25)))
+	b.Run("G", f(make([]byte, 1<<30)))
 }

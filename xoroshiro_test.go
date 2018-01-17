@@ -50,20 +50,32 @@ func TestXoroSave(t *testing.T) {
 
 func BenchmarkXoroshiro(b *testing.B) {
 	xoro := CryptoSeeded(NewXoroshiro(), 16).(*Xoroshiro)
-	p := make([]byte, 1<<30)
-	b.SetBytes(int64(len(p)))
-	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
-		xoro.Read(p)
+	f := func(p []byte) func(b *testing.B) {
+		return func(b *testing.B) {
+			b.SetBytes(int64(len(p)))
+			for n := 0; n < b.N; n++ {
+				xoro.Read(p)
+			}
+		}
 	}
+	b.Run("8", f(make([]byte, 8)))
+	b.Run("K", f(make([]byte, 1<<10)))
+	b.Run("M", f(make([]byte, 1<<25)))
+	b.Run("G", f(make([]byte, 1<<30)))
 }
 
 func BenchmarkRexoroshiro(b *testing.B) {
 	rexo := CryptoSeeded(NewRexoroshiro(), 16).(*Rexoroshiro)
-	p := make([]byte, 1<<30)
-	b.SetBytes(int64(len(p)))
-	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
-		rexo.Read(p)
+	f := func(p []byte) func(b *testing.B) {
+		return func(b *testing.B) {
+			b.SetBytes(int64(len(p)))
+			for n := 0; n < b.N; n++ {
+				rexo.Read(p)
+			}
+		}
 	}
+	b.Run("8", f(make([]byte, 8)))
+	b.Run("K", f(make([]byte, 1<<10)))
+	b.Run("M", f(make([]byte, 1<<25)))
+	b.Run("G", f(make([]byte, 1<<30)))
 }
