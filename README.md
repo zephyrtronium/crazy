@@ -60,7 +60,8 @@ so it may appear slower than usual relative to the others in K tests.)
 
 An example of running benchmarks might look like:
 
-```> go test -bench /[KG] -benchtime 1m -timeout 24h
+```
+> go test -bench /[KG] -benchtime 1m -timeout 24h
 goos: windows
 goarch: amd64
 pkg: github.com/zephyrtronium/crazy
@@ -73,7 +74,8 @@ BenchmarkXoroshiro/G-8               500         207571328 ns/op        5172.88 
 BenchmarkRexoroshiro/K-8        500000000              206 ns/op        4957.86 MB/s
 BenchmarkRexoroshiro/G-8             500         213313608 ns/op        5033.63 MB/s
 PASS
-ok      github.com/zephyrtronium/crazy  821.086s```
+ok      github.com/zephyrtronium/crazy  821.086s
+```
 
 In these results, the ns/op measures the time spent to fill an entire 1K or 1G
 block (_not_ just to generate a single value). The MB/s throughput is generally
