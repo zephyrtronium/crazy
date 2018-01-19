@@ -36,12 +36,13 @@ However, there are some situations where the others may be better:
 	uniformity in many dimensions is required. It is, however, the slowest
 	generator implemented in crazy: about a third the throughput of
 	xoroshiro128+ and a bit less than half that of LFG. Eventually, I'd like to
-	implement one of the WELL generators for even better dimensionality at
-	faster speeds.
-- LFG(273, 607) is the same PRNG implemented in math/rand. Therefore, it can be
-	used where interoperability with the same is required; for example, to
-	transition from the standard library to crazy in order to be able to save
-	and restore state while not risking changes to test results.
+	implement one of the WELL generators for even better equidistribution at
+	comparable speeds.
+- LFG(273, 607) is reasonably fast with reasonable quality. It is the same
+	generator as the one used in the standard library, but it travels in the
+	opposite direction and uses a different seeding algorithm. If the standard
+	library works for you but xoroshiro doesn't, and MT64 is too slow, LFG
+	should work.
 - Cryptographically secure pseudo-random number generators are outside the
 	scope of crazy. There will never be a CSPRNG in crazy. Avoid using any
 	crazy generator for any cryptographic applications.
@@ -56,7 +57,9 @@ Generally, the G tests give the best indication of average performance, M tests
 are for consideration of those who don't want to lose a gigabyte of memory, and
 K tests give an indication of performance when paging is mitigated. (The state
 size of LFG(273, 607) is itself larger than the typical page size for x86/64,
-so it may appear slower than usual relative to the others in K tests.)
+so it may appear slower than usual relative to the others in K tests.) 8 tests
+indicate the speed of generating individual values at a time, but this is not
+recommended if avoidable.
 
 An example of running benchmarks might look like:
 
