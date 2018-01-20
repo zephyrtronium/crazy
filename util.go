@@ -40,21 +40,39 @@ func (x SelectCompose) Read(p []byte) (int, error) {
 	return len(p), nil
 }
 
-type math2crazy struct {
-	mathrand.Source
-}
+type (
+	math2crazy struct {
+		mathrand.Source
+	}
+
+	math642crazy struct {
+		mathrand.Source64
+	}
+)
 
 // AdaptRand turns a math/rand Source into a crazy Seeder. If the argument
-// already implements Seeder, it is returned directly. Otherwise, to preserve
+// already implements Seeder, it is returned directly. Otherwise, if the
+// argument does not implement math/rand Source64, then to preserve
 // equidistribution, the Read() method of this Seeder uses two Int63() calls
 // per eight bytes of output, using one fewer call when the output is not
-// divisible by 8. Additionally, the SeedIV() method uses only up to the first
+// divisible by 8. Either way, the SeedIV() method uses only up to the first
 // eight bytes of the argument.
 func AdaptRand(src mathrand.Source) Seeder {
 	if s, ok := src.(Seeder); ok {
 		return s
 	}
+	if s, ok := src.(mathrand.Source64); ok {
+		return math642crazy{src}
+	}
 	return math2crazy{src}
+}
+
+// AdaptRand64 is like AdaptRand but takes a math/rand Source64 instead.
+func AdaptRand64(src mathrand.Source64) Seeder {
+	if s, ok := src.(Seeder); ok {
+		return s
+	}
+	return math642crazy{src}
 }
 
 func (m math2crazy) Read(p []byte) (n int, err error) {
@@ -63,9 +81,7 @@ func (m math2crazy) Read(p []byte) (n int, err error) {
 		binary.LittleEndian.PutUint64(p, uint64(m.Int63()^m.Int63()<<1))
 		p = p[8:]
 	}
-	if len(p) == 8 {
-		binary.LittleEndian.PutUint64(p, uint64(m.Int63()^m.Int63()<<1))
-	} else {
+	if len(p) > 0 {
 		b := [8]byte{}
 		binary.LittleEndian.PutUint64(b[:], uint64(m.Int63()))
 		copy(p, b[:])
@@ -73,7 +89,27 @@ func (m math2crazy) Read(p []byte) (n int, err error) {
 	return n, nil
 }
 
+func (m math642crazy) Read(p []byte) (n int, err error) {
+	n = len(p)
+	for len(p) >= 8 {
+		binary.LittleEndian.PutUint64(p, m.Uint64())
+		p = p[8:]
+	}
+	if len(p) > 0 {
+		b := [8]byte{}
+		binary.LittleEndian.PutUint64(b[:], m.Uint64())
+		copy(p, b[:])
+	}
+	return n, nil
+}
+
 func (m math2crazy) SeedIV(iv []byte) {
+	b := [8]byte{}
+	copy(b[:], iv)
+	m.Seed(int64(binary.LittleEndian.Uint64(b[:])))
+}
+
+func (m math642crazy) SeedIV(iv []byte) {
 	b := [8]byte{}
 	copy(b[:], iv)
 	m.Seed(int64(binary.LittleEndian.Uint64(b[:])))

@@ -40,11 +40,14 @@ func (lfg *LFG) SeedIV(iv []byte) {
 		lfg.s[(i+lfgK-lfgJ)%lfgK] += lfgS0[(int(v)+256*i)%lfgK]
 	}
 	for i := 0; i < lfgK*8; i++ {
-		lfg.next()
+		lfg.Uint64()
 	}
 }
 
-func (lfg *LFG) next() uint64 {
+// Uint64 produces a 64-bit pseudo-random value. This primarily serves to
+// satisfy the rand.Source64 interface, but it also provides direct access to
+// the algorithm's values, which can simplify usage in some scenarios.
+func (lfg *LFG) Uint64() uint64 {
 	x := lfg.s[lfg.f] + lfg.s[lfg.t]
 	lfg.f++
 	lfg.t++
@@ -62,11 +65,11 @@ func (lfg *LFG) next() uint64 {
 func (lfg *LFG) Read(p []byte) (n int, err error) {
 	n = len(p)
 	for len(p) >= 8 {
-		binary.LittleEndian.PutUint64(p, lfg.next())
+		binary.LittleEndian.PutUint64(p, lfg.Uint64())
 		p = p[8:]
 	}
 	b := [8]byte{}
-	binary.LittleEndian.PutUint64(b[:], lfg.next())
+	binary.LittleEndian.PutUint64(b[:], lfg.Uint64())
 	copy(p, b[:])
 	return n, nil
 }
@@ -74,7 +77,7 @@ func (lfg *LFG) Read(p []byte) (n int, err error) {
 // Int63 generates an integer in the interval [0, 2**63 - 1]. This serves to
 // satisfy the rand.Source interface.
 func (lfg *LFG) Int63() int64 {
-	return int64(lfg.next() >> 1)
+	return int64(lfg.Uint64() >> 1)
 }
 
 // Save serializes the current state of the LFG. Values produced by an LFG that

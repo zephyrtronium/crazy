@@ -72,7 +72,10 @@ func (mt *MT64) SeedIV(iv []byte) {
 	}
 }
 
-func (mt *MT64) next() uint64 {
+// Uint64 produces a 64-bit pseudo-random value. This primarily serves to
+// satisfy the rand.Source64 interface, but it also provides direct access to
+// the algorithm's values, which can simplify usage in some scenarios.
+func (mt *MT64) Uint64() uint64 {
 	if mt.i >= mt64N {
 		i := 0
 		for i < mt64N-mt64M {
@@ -107,11 +110,11 @@ func (mt *MT64) next() uint64 {
 func (mt *MT64) Read(p []byte) (n int, err error) {
 	n = len(p)
 	for len(p) >= 8 {
-		binary.LittleEndian.PutUint64(p, mt.next())
+		binary.LittleEndian.PutUint64(p, mt.Uint64())
 		p = p[8:]
 	}
 	b := [8]byte{}
-	binary.LittleEndian.PutUint64(b[:], mt.next())
+	binary.LittleEndian.PutUint64(b[:], mt.Uint64())
 	copy(p, b[:])
 	return n, nil
 }
@@ -119,7 +122,7 @@ func (mt *MT64) Read(p []byte) (n int, err error) {
 // Int63 generates an integer in the interval [0, 2**63 - 1]. This serves to
 // satisfy the rand.Source interface.
 func (mt *MT64) Int63() int64 {
-	return int64(mt.next() >> 1)
+	return int64(mt.Uint64() >> 1)
 }
 
 // Save serializes the current state of the Mersenne twister. Values produced
