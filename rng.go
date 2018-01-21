@@ -31,7 +31,8 @@ func (r RNG) Uint16() uint16 {
 	return binary.LittleEndian.Uint16(p[:])
 }
 
-// Uintn generates a random uint in the interval [0, max).
+// Uintn generates a random uint in the interval [0, max). It panics if
+// max == 0.
 func (r RNG) Uintn(max uint) uint {
 	bad := ^uint(0) - ^uint(0)%max
 	x := uint(r.Uint64())
@@ -41,7 +42,7 @@ func (r RNG) Uintn(max uint) uint {
 	return x % max
 }
 
-// Intn generates a random int in the interval [0, max). It panics if max < 0.
+// Intn generates a random int in the interval [0, max). It panics if max <= 0.
 func (r RNG) Intn(max int) int {
 	if max < 0 {
 		panic("maximum below zero")
@@ -51,7 +52,7 @@ func (r RNG) Intn(max int) int {
 
 // Big generates a random number with maximum bit length nbits.
 func (r RNG) Big(nbits int) *big.Int {
-	p := make([]byte, uint(nbits)>>3+uint(nbits|nbits>>1|nbits>>2)&1)
+	p := make([]byte, (uint(nbits)+7)>>3)
 	r.Read(p)
 	p[0] &= byte(0xff >> (8 - uint(nbits)&7))
 	return new(big.Int).SetBytes(p)
