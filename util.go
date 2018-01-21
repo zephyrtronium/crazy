@@ -62,7 +62,7 @@ func AdaptRand(src mathrand.Source) Seeder {
 		return s
 	}
 	if s, ok := src.(mathrand.Source64); ok {
-		return math642crazy{src}
+		return math642crazy{s}
 	}
 	return math2crazy{src}
 }
