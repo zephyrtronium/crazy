@@ -120,12 +120,16 @@ type crazy2math struct {
 }
 
 // AdaptCrazy turns a crazy Seeder into a math/rand Source. If the argument
-// already implements math/rand.Source, it is returned directly.
-func AdaptCrazy(src Seeder) mathrand.Source {
-	if m, ok := src.(mathrand.Source); ok {
+// already implements math/rand.Source64, it is returned directly.
+func AdaptCrazy(src Seeder) mathrand.Source64 {
+	if m, ok := src.(mathrand.Source64); ok {
 		return m
 	}
 	return crazy2math{src}
+}
+
+func (c crazy2math) Uint64() uint64 {
+	return rng{c.Seeder}.Uint64()
 }
 
 func (c crazy2math) Int63() int64 {
