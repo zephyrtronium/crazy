@@ -12,9 +12,9 @@ Crazy rejects certain basic assumptions taken by math/rand, including:
 - Sometimes people want to save and restore exact PRNG states. A Saver has
   this capability.
 
-Currently implemented PRNGs are LFG(273, 607), MT64-19937, xoroshiro128+, and
-a modification of xoroshiro128+ that increases the entropy of low-order bits.
-crypto/rand.Reader naturally implements Source.
+Currently implemented PRNGs are LFG(273, 607), MT64-19937, xoroshiro128+
+a modification of xoroshiro128+ that rearranges the output bytes, and
+xoshiro256*​*. crypto/rand.Reader naturally implements Source.
 
 The only currently implemented distributions are normal and exponential, but
 the ziggurat directory contains a Python script to calculate the necessary
@@ -23,29 +23,20 @@ parameters for any monotonically decreasing distribution.
 ## Which PRNG?
 
 As mentioned above, crazy includes a variety of different generators. For most
-applications, xoroshiro128+ is the best generator because it is the fastest.
-However, there are some situations where the others may be better:
+applications, xoshiro256** is the best generator because it is almost the
+fastest and has excellent output stream properties. However, there are some
+situations where the others may be better:
 
-- rexoroshiro may be better for situations where the PRNG is most frequently
-	used to choose between two to four options, especially true/false, because
-	plain xoroshiro128+ is known to have relatively low entropy in its lowest
-	bits. Most applications won't notice the difference, but it may sometimes
-	be important.
-- MT64-19937 has the property of 623-dimensional k-distribution, which means in
-	practice that it is the best option for things like MCMC where high
-	uniformity in many dimensions is required. It is, however, the slowest
-	generator implemented in crazy: about a third the throughput of
-	xoroshiro128+ and a bit less than half that of LFG. Eventually, I'd like to
-	implement one of the WELL generators for even better equidistribution at
-	comparable speeds.
-- LFG(273, 607) is reasonably fast with reasonable quality. It is the same
-	generator as the one used in the standard library, but it travels in the
-	opposite direction and uses a different seeding algorithm. If the standard
-	library works for you but xoroshiro doesn't, and MT64 is too slow, LFG
-	should work.
-- Cryptographically secure pseudo-random number generators are outside the
-	scope of crazy. There will never be a CSPRNG in crazy. Avoid using any
-	crazy generator for any cryptographic applications.
+- MT64-19937 has the property of 623-equidistribution, meaning that every tuple
+	of 623 values appears in the output sequence, except the all-zero tuple.
+	This property makes it well-suited to applications requiring uniformity in
+	many dimensions, like MCMC over a large graph. It is, however, the slowest
+	generator implemented in crazy: about a third the throughput of xoshiro and
+	a bit less than half that of LFG.
+- LFG(273, 607) is fast with reasonable quality. It is the same generator as
+	the one used in the standard library, but it travels in the opposite
+	direction and uses a different seeding algorithm. If the standard library
+	works for you but xoshiro doesn't, and MT64 is too slow, LFG should work.
 
 ## Benchmarks
 
@@ -84,3 +75,8 @@ In these results, the ns/op measures the time spent to fill an entire 1K or 1G
 block (_not_ just to generate a single value). The MB/s throughput is generally
 a better indicator of performance. It is encouraged to use the `-benchtime`
 argument to `go test` in order to measure generation of more values.
+
+The package currently contains some testing artifacts related to unusual
+slowdown observed in Xoroshiro between Go 1.9.7 and 1.10. In particular, the
+package currently may only build on amd64, and the Asmxoro function will go
+away once the issues are resolved.

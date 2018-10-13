@@ -9,11 +9,11 @@ import (
 )
 
 func TestXoroSeed(t *testing.T) {
-	lfg := NewLFG()
-	lfg.SeedIV(nil)
-	lfg.SeedIV([]byte{7: 0})
-	lfg.SeedIV([]byte{15: 0})
-	lfg.SeedIV([]byte{23: 0})
+	xoro := NewXoroshiro()
+	xoro.SeedIV(nil)
+	xoro.SeedIV([]byte{7: 0})
+	xoro.SeedIV([]byte{15: 0})
+	xoro.SeedIV([]byte{23: 0})
 }
 
 func TestXoroSeedConsistency(t *testing.T) {

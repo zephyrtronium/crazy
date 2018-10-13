@@ -9,10 +9,9 @@ import (
 )
 
 // Xoroshiro implements the Xoroshiro128+ PRNG created by David Blackman and
-// Sebastiano Vigna. It has period 2**128-1 with 128 state bits. Xoroshiro is
-// the recommended PRNG for most non-scientific applications, as it is
-// extremely fast and has a very small state while still having very good
-// statistical randomness.
+// Sebastiano Vigna. It has period 2**128-1 with 128 state bits. Xoroshiro was
+// the recommended PRNG for most non-scientific applications, but it has been
+// supplanted by Xoshiro.
 type Xoroshiro [2]uint64
 
 // NewXoroshiro produces an unseeded Xoroshiro. Call either xoro.Seed[IV]() or
@@ -82,6 +81,8 @@ func (xoro *Xoroshiro) SeedIV(iv []byte) {
 	(*xoro)[0] = z
 }
 
+func Asmxoro(xoro *Xoroshiro) uint64
+
 // Uint64 produces a 64-bit pseudo-random value. This primarily serves to
 // satisfy the rand.Source64 interface, but it also provides direct access to
 // the algorithm's values, which can simplify usage in some scenarios.
@@ -102,11 +103,9 @@ func (xoro *Xoroshiro) Read(p []byte) (n int, err error) {
 		binary.LittleEndian.PutUint64(p, xoro.Uint64())
 		p = p[8:]
 	}
-	if len(p) > 8 {
-		b := [8]byte{}
-		binary.LittleEndian.PutUint64(b[:], xoro.Uint64())
-		copy(p, b[:])
-	}
+	b := [8]byte{}
+	binary.LittleEndian.PutUint64(b[:], xoro.Uint64())
+	copy(p, b[:])
 	return n, nil
 }
 

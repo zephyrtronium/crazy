@@ -129,7 +129,7 @@ func AdaptCrazy(src Seeder) mathrand.Source64 {
 }
 
 func (c crazy2math) Uint64() uint64 {
-	return rng{c.Seeder}.Uint64()
+	return RNG{c.Seeder}.Uint64()
 }
 
 func (c crazy2math) Int63() int64 {
