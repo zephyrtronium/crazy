@@ -13,18 +13,22 @@ const (
 
 // MT64 is a 64-bit Mersenne twister. The choice of parameters yields a period
 // of 2**19937 - 1.
+//
+// Compared to xoshiro256**, MT64-19937 is far better distributed in higher
+// dimensions and has much larger period. However, it is also much slower.
+// MT64 is slow to recover from states with small Hamming  weight.
 type MT64 struct {
 	i int
 	s [mt64N]uint64
 }
 
-// NewMT64 produces an unseeded 64-bit Mersenne twister. Call mt.Seed[IV]() or
-// mt.Restore() prior to use.
+// NewMT64 produces an unseeded 64-bit Mersenne twister. Call Seed[IV]() or
+// Restore() prior to use.
 func NewMT64() *MT64 {
 	return &MT64{}
 }
 
-// Seed initializes mt using an int64. This serves to satisfy the rand.Source
+// Seed initializes mt using an int64. This exists to satisfy the rand.Source
 // interface.
 func (mt *MT64) Seed(seed int64) {
 	mt.s[0] = uint64(seed)
@@ -72,9 +76,7 @@ func (mt *MT64) SeedIV(iv []byte) {
 	}
 }
 
-// Uint64 produces a 64-bit pseudo-random value. This primarily serves to
-// satisfy the rand.Source64 interface, but it also provides direct access to
-// the algorithm's values, which can simplify usage in some scenarios.
+// Uint64 produces a 64-bit pseudo-random value.
 func (mt *MT64) Uint64() uint64 {
 	if mt.i >= mt64N {
 		i := 0
@@ -109,7 +111,7 @@ func (mt *MT64) Uint64() uint64 {
 // unused bytes. n will always be len(p) and err will always be nil.
 func (mt *MT64) Read(p []byte) (n int, err error) {
 	n = len(p)
-	for len(p) >= 8 {
+	for len(p) > 8 {
 		binary.LittleEndian.PutUint64(p, mt.Uint64())
 		p = p[8:]
 	}
@@ -119,7 +121,7 @@ func (mt *MT64) Read(p []byte) (n int, err error) {
 	return n, nil
 }
 
-// Int63 generates an integer in the interval [0, 2**63 - 1]. This serves to
+// Int63 generates an integer in the interval [0, 2**63 - 1]. This exists to
 // satisfy the rand.Source interface.
 func (mt *MT64) Int63() int64 {
 	return int64(mt.Uint64() >> 1)
@@ -132,7 +134,8 @@ func (mt *MT64) Save(into io.Writer) (n int, err error) {
 	// Unlike with LFG, we can't* get away without saving mt.i, so we have to
 	// spend an extra two bytes. That said, the state size of this is actually
 	// much smaller than that of LFG.
-	// *It is possible to produce a rotation of the MT state, but much more
+	//
+	// * It is possible to produce a rotation of the MT state, but much more
 	// expensive, and I don't feel like figuring out how to do it anyway.
 	p := [2 + mt64N*8]byte{}
 	for i, v := range mt.s {

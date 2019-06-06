@@ -5,8 +5,9 @@ and pseudo-randomness.
 
 Crazy rejects certain basic assumptions taken by math/rand, including:
 
-- Randomness does not necessarily produce numbers. Rather than returning an
-  int64, crazy's Source is identical to io.Reader.
+- Randomness does not necessarily produce numbers. Rather than returning
+  (u)int64s, crazy's Source is identical to io.Reader. (Crazy's sources
+  also implement rand.Source64, though.)
 - Not all randomness sources can be seeded. In particular, crypto/rand is a
   Source but not a Seeder.
 - Sometimes people want to save and restore exact PRNG states. A Saver has
@@ -23,20 +24,25 @@ parameters for any monotonically decreasing distribution.
 ## Which PRNG?
 
 As mentioned above, crazy includes a variety of different generators. For most
-applications, xoshiro256** is the best generator because it is almost the
-fastest and has excellent output stream properties. However, there are some
+applications, xoshiro256** is the best generator because it is very fast, very
+small, and has excellent output stream properties. However, there are some
 situations where the others may be better:
 
 - MT64-19937 has the property of 623-equidistribution, meaning that every tuple
 	of 623 values appears in the output sequence, except the all-zero tuple.
 	This property makes it well-suited to applications requiring uniformity in
-	many dimensions, like MCMC over a large graph. It is, however, the slowest
-	generator implemented in crazy: about a third the throughput of xoshiro and
-	a bit less than half that of LFG.
+	many dimensions, like random walks over a highly connected graph. It is,
+	however, the slowest generator implemented in crazy.
 - LFG(273, 607) is fast with reasonable quality. It is the same generator as
 	the one used in the standard library, but it travels in the opposite
-	direction and uses a different seeding algorithm. If the standard library
-	works for you but xoshiro doesn't, and MT64 is too slow, LFG should work.
+	direction and uses a different seeding algorithm. LFG may be suitable for
+	moderately dimensional MCMC, where MT64's slow speed doesn't outweigh its
+	superior distribution and huge period, but xoshiro's 4-dimensional
+	equidistribution is still insufficient.
+- xoroshiro128+ has the lowest dimension of PRNGs in crazy, but it is also the
+	fastest. For tasks where speed is the only significant factor, and the low
+	linear complexity in the low bits of its output stream is acceptable,
+	xoroshiro is a good fit.
 
 ## Benchmarks
 
@@ -55,28 +61,25 @@ recommended if avoidable.
 An example of running benchmarks might look like:
 
 ```
-> go test -bench /[KG] -benchtime 1m -timeout 24h
+> go test -bench /[KG] -benchtime 10s -timeout 1h
 goos: windows
 goarch: amd64
 pkg: github.com/zephyrtronium/crazy
-BenchmarkLFG/K-8                300000000              246 ns/op        4157.82 MB/s
-BenchmarkLFG/G-8                     300         249721152 ns/op        4299.76 MB/s
-BenchmarkMT64/K-8               100000000              602 ns/op        1700.07 MB/s
-BenchmarkMT64/G-8                    100         621177901 ns/op        1728.56 MB/s
-BenchmarkXoroshiro/K-8          500000000              200 ns/op        5102.19 MB/s
-BenchmarkXoroshiro/G-8               500         207571328 ns/op        5172.88 MB/s
-BenchmarkRexoroshiro/K-8        500000000              206 ns/op        4957.86 MB/s
-BenchmarkRexoroshiro/G-8             500         213313608 ns/op        5033.63 MB/s
+BenchmarkLFG/K-8                50000000               242 ns/op        4228.04 MB/s
+BenchmarkLFG/G-8                      50         247917030 ns/op        4331.05 MB/s
+BenchmarkMT64/K-8               30000000               586 ns/op        1745.66 MB/s
+BenchmarkMT64/G-8                     20         603785375 ns/op        1778.35 MB/s
+BenchmarkXoroshiro/K-8          100000000              199 ns/op        5128.92 MB/s
+BenchmarkXoroshiro/G-8               100         203835315 ns/op        5267.69 MB/s
+BenchmarkRexoroshiro/K-8        100000000              216 ns/op        4736.30 MB/s
+BenchmarkRexoroshiro/G-8             100         219902115 ns/op        4882.82 MB/s
+BenchmarkXoshiro/K-8            50000000               256 ns/op        3997.27 MB/s
+BenchmarkXoshiro/G-8                  50         282325022 ns/op        3803.21 MB/s
 PASS
-ok      github.com/zephyrtronium/crazy  821.086s
+ok      github.com/zephyrtronium/crazy  176.454s
 ```
 
 In these results, the ns/op measures the time spent to fill an entire 1K or 1G
-block (_not_ just to generate a single value). The MB/s throughput is generally
-a better indicator of performance. It is encouraged to use the `-benchtime`
-argument to `go test` in order to measure generation of more values.
-
-The package currently contains some testing artifacts related to unusual
-slowdown observed in Xoroshiro between Go 1.9.7 and 1.10. In particular, the
-package currently may only build on amd64, and the Asmxoro function will go
-away once the issues are resolved.
+block, not just to generate a single value). The MB/s throughput is generally a
+better indicator of performance. When benchmarking for yourself, use the
+`-benchtime` argument to `go test` in order to measure generation of more values.

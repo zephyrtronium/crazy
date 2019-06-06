@@ -52,11 +52,11 @@ type (
 
 // AdaptRand turns a math/rand Source into a crazy Seeder. If the argument
 // already implements Seeder, it is returned directly. Otherwise, if the
-// argument does not implement math/rand Source64, then to preserve
-// equidistribution, the Read() method of this Seeder uses two Int63() calls
-// per eight bytes of output, using one fewer call when the output is not
-// divisible by 8. Either way, the SeedIV() method uses only up to the first
-// eight bytes of the argument.
+// argument does not implement math/rand Source64, then to ensure a full
+// distribution, the Read() method of this Seeder uses two Int63() calls per
+// eight bytes of output, using one fewer call when the output is not divisible
+// by 8. The SeedIV() method of the returned interface uses only up to the
+// first eight bytes of the argument.
 func AdaptRand(src mathrand.Source) Seeder {
 	if s, ok := src.(Seeder); ok {
 		return s
@@ -119,7 +119,7 @@ type crazy2math struct {
 	Seeder
 }
 
-// AdaptCrazy turns a crazy Seeder into a math/rand Source. If the argument
+// AdaptCrazy turns a crazy Seeder into a math/rand Source64. If the argument
 // already implements math/rand.Source64, it is returned directly.
 func AdaptCrazy(src Seeder) mathrand.Source64 {
 	if m, ok := src.(mathrand.Source64); ok {

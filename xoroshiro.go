@@ -14,8 +14,8 @@ import (
 // supplanted by Xoshiro.
 type Xoroshiro [2]uint64
 
-// NewXoroshiro produces an unseeded Xoroshiro. Call either xoro.Seed[IV]() or
-// xoro.Restore() prior to use.
+// NewXoroshiro produces an unseeded Xoroshiro. Call Seed[IV]() or Restore()
+// prior to use.
 func NewXoroshiro() *Xoroshiro {
 	return &Xoroshiro{}
 }
@@ -81,11 +81,7 @@ func (xoro *Xoroshiro) SeedIV(iv []byte) {
 	(*xoro)[0] = z
 }
 
-func Asmxoro(xoro *Xoroshiro) uint64
-
-// Uint64 produces a 64-bit pseudo-random value. This primarily serves to
-// satisfy the rand.Source64 interface, but it also provides direct access to
-// the algorithm's values, which can simplify usage in some scenarios.
+// Uint64 produces a 64-bit pseudo-random value.
 func (xoro *Xoroshiro) Uint64() uint64 {
 	s0, s1 := (*xoro)[0], (*xoro)[1]
 	x := s0 + s1
@@ -131,21 +127,23 @@ func (xoro *Xoroshiro) Restore(from io.Reader) (n int, err error) {
 	return n, nil
 }
 
-// Seed is a proxy to SeedInt64. This serves to satisfy the rand.Source
+// Seed is a proxy to SeedInt64. This exists to satisfy the rand.Source
 // interface.
 func (xoro *Xoroshiro) Seed(x int64) {
 	SeedInt64(xoro, x)
 }
 
-// Int63 generates an integer in the interval [0, 2**63 - 1]. This serves to
+// Int63 generates an integer in the interval [0, 2**63 - 1]. This exists to
 // satisfy the rand.Source interface.
 func (xoro *Xoroshiro) Int63() int64 {
 	return int64(xoro.Uint64() >> 1)
 }
 
+// Rexoroshiro is deprecated. Use Xoshiro instead.
+//
 // Rexoroshiro is the same as Xoroshiro but yields values that are bytewise
-// reversed. This sacrifices some speed to place the bits with greater apparent
-// randomness in the low positions, making the generator stronger when
+// reversed. This sacrifices some speed to place bits with greater linear
+// complexity in the low positions, making the generator stronger when
 // producing values interpreted in small ranges; e.g., RNG{rexo}.Intn(2) is
 // typically "better" than RNG{xoro}.Intn(2).
 type Rexoroshiro Xoroshiro
@@ -161,9 +159,7 @@ func (rexo *Rexoroshiro) SeedIV(iv []byte) {
 	(*Xoroshiro).SeedIV((*Xoroshiro)(rexo), iv)
 }
 
-// Uint64 produces a 64-bit pseudo-random value. This primarily serves to
-// satisfy the rand.Source64 interface, but it also provides direct access to
-// the algorithm's values, which can simplify usage in some scenarios.
+// Uint64 produces a 64-bit pseudo-random value.
 func (rexo *Rexoroshiro) Uint64() uint64 {
 	return bits.ReverseBytes64((*Xoroshiro).Uint64((*Xoroshiro)(rexo)))
 }
@@ -171,15 +167,13 @@ func (rexo *Rexoroshiro) Uint64() uint64 {
 // Read fills p with random bytes that are byte-reversed Xoroshiro values.
 func (rexo *Rexoroshiro) Read(p []byte) (n int, err error) {
 	n = len(p)
-	for len(p) >= 8 {
+	for len(p) > 8 {
 		binary.LittleEndian.PutUint64(p, rexo.Uint64())
 		p = p[8:]
 	}
-	if len(p) > 0 {
-		b := [8]byte{}
-		binary.LittleEndian.PutUint64(b[:], rexo.Uint64())
-		copy(p, b[:])
-	}
+	b := [8]byte{}
+	binary.LittleEndian.PutUint64(b[:], rexo.Uint64())
+	copy(p, b[:])
 	return n, nil
 }
 
@@ -195,13 +189,13 @@ func (rexo *Rexoroshiro) Restore(from io.Reader) (n int, err error) {
 	return (*Xoroshiro).Restore((*Xoroshiro)(rexo), from)
 }
 
-// Seed is a proxy to Xoroshiro's Seed. This serves to satisfy the rand.Source
+// Seed is a proxy to Xoroshiro's Seed. This exists to satisfy the rand.Source
 // interface.
 func (rexo *Rexoroshiro) Seed(x int64) {
 	(*Xoroshiro).Seed((*Xoroshiro)(rexo), x)
 }
 
-// Int63 generates an integer in the interval [0, 2**63 - 1]. This serves to
+// Int63 generates an integer in the interval [0, 2**63 - 1]. This exists to
 // satisfy the rand.Source interface.
 func (rexo *Rexoroshiro) Int63() int64 {
 	// Since the low bits have the highest quality, it makes sense to mask

@@ -8,18 +8,21 @@ import (
 	"math/bits"
 )
 
-// Xoshiro implements the Xoshiro256** PRNG created by David Blackman and
+// Xoshiro implements the xoshiro256** PRNG created by David Blackman and
 // Sebastiano Vigna. It has period 2**256-1 with 256 state bits and exhibits
 // 4-equidistribution (all tuples of four consecutive 64-bit values except the
-// all-zero tuple appear in the sequence), with irrelevantly large linear
-// complexity in all bits. With the exception of situations requiring higher
-// dimensional equidistribution, this is the best known PRNG.
+// all-zero tuple appear once in the sequence), with irrelevantly large linear
+// complexity in all bits.
+//
+// Compared to MT64-19937, xoshiro256** is much faster and smaller, but its
+// period is also much smaller, and it has a much lower dimensional
+// distribution. xoshiro recovers from "poor" states quickly.
 type Xoshiro struct {
 	w, x, y, z uint64
 }
 
-// NewXoshiro produces an unseeded Xoshiro. Call either xooshi.Seed[IV]() or
-// xoshi.Restore() prior to use.
+// NewXoshiro produces an unseeded Xoshiro. Call Seed[IV]() or Restore() prior
+// to use.
 func NewXoshiro() *Xoshiro {
 	return &Xoshiro{}
 }
@@ -234,14 +237,8 @@ func (xoshi *Xoshiro) SeedIV(iv []byte) {
 	}
 }
 
-// Uint64 produces a 64-bit pseudo-random value. This primarily serves to
-// satisfy the rand.Source64 interface, but it also provides direct access to
-// the algorithm's values, which can simplify usage in some scenarios.
+// Uint64 produces a 64-bit pseudo-random value.
 func (xoshi *Xoshiro) Uint64() uint64 {
-	// This function is slow as of Go 1.11, probably due to use of
-	// three-operand LEAQs (https://github.com/golang/go/issues/21735), but
-	// using a handwritten ASM function is about 40% slower due to the extra
-	// code needed to call the function from the method.
 	r := bits.RotateLeft64(xoshi.x*5, 7) * 9
 	t := xoshi.x << 17
 	xoshi.y ^= xoshi.w
@@ -257,15 +254,13 @@ func (xoshi *Xoshiro) Uint64() uint64 {
 // unused bytes. n will always be len(p) and err will always be nil.
 func (xoshi *Xoshiro) Read(p []byte) (n int, err error) {
 	n = len(p)
-	for len(p) >= 8 {
+	for len(p) > 8 {
 		binary.LittleEndian.PutUint64(p, xoshi.Uint64())
 		p = p[8:]
 	}
-	if len(p) > 0 {
-		b := [8]byte{}
-		binary.LittleEndian.PutUint64(b[:], xoshi.Uint64())
-		copy(p, b[:])
-	}
+	b := [8]byte{}
+	binary.LittleEndian.PutUint64(b[:], xoshi.Uint64())
+	copy(p, b[:])
 	return n, nil
 }
 
@@ -295,7 +290,7 @@ func (xoshi *Xoshiro) Restore(from io.Reader) (n int, err error) {
 	return n, nil
 }
 
-// Seed is a proxy to SeedInt64. This serves to satisfy the rand.Source
+// Seed is a proxy to SeedInt64. This exists to satisfy the rand.Source
 // interface.
 func (xoshi *Xoshiro) Seed(x int64) {
 	SeedInt64(xoshi, x)

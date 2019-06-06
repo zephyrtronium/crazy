@@ -13,19 +13,33 @@ const (
 // LFG implements a lagged Fibonacci generator. Numbers are produced under the
 // recurrence S[n] = f(S[n-j], S[n-k]) (mod m), 0 < j < k. For the sake of
 // speed, this implementation defines f(x, y) = x + y, j = 273, k = 607,
-// m = 2**64. This yields a period of (2**k - 1) * m/2 = 2**670 - 63.
+// m = 2**64. This yields a period of (2**k - 1) * m/2 = 2**670 - 2**63.
+//
+// Compared to xoshiro256**, LFG(273, 607) is very slightly faster (about 6%
+// higher throughput on my system) and seems to be better distributed beyond
+// four dimensions (although the exact distribution of k-tuples, and whether
+// LFG exhibits equidistribution at all, seems to be unknown). LFG also has a
+// larger period. However, its state is more than 150 times larger, making it
+// by far the least state-efficient PRNG in crazy. Additionally, LFG recovers
+// very slowly from states with small norm.
+//
+// Compared to MT64-19937, LFG is much faster (142% higher throughput). MT64
+// has significantly better distribution in higher dimensions and a far longer
+// period.
+//
+// LFG is functionally the same generator as the Go standard library's, but
+// with a reversed output stream and a different seeding algorithm.
 type LFG struct {
 	f, t int
 	s    [lfgK]uint64
 }
 
-// NewLFG produces an unseeded LFG. Call either lfg.Seed[IV]() or lfg.Restore()
-// prior to use.
+// NewLFG produces an unseeded LFG. Call Seed[IV]() or Restore() prior to use.
 func NewLFG() *LFG {
 	return &LFG{f: lfgK - lfgJ}
 }
 
-// Seed calls SeedInt64(lfg, x). This serves to satisfy the rand.Source
+// Seed calls SeedInt64(lfg, x). This exists to satisfy the rand.Source
 // interface.
 func (lfg *LFG) Seed(x int64) {
 	SeedInt64(lfg, x)
@@ -44,9 +58,7 @@ func (lfg *LFG) SeedIV(iv []byte) {
 	}
 }
 
-// Uint64 produces a 64-bit pseudo-random value. This primarily serves to
-// satisfy the rand.Source64 interface, but it also provides direct access to
-// the algorithm's values, which can simplify usage in some scenarios.
+// Uint64 produces a 64-bit pseudo-random value.
 func (lfg *LFG) Uint64() uint64 {
 	x := lfg.s[lfg.f] + lfg.s[lfg.t]
 	lfg.f++
@@ -64,7 +76,7 @@ func (lfg *LFG) Uint64() uint64 {
 // unused bytes. n will always be len(p) and err will always be nil.
 func (lfg *LFG) Read(p []byte) (n int, err error) {
 	n = len(p)
-	for len(p) >= 8 {
+	for len(p) > 8 {
 		binary.LittleEndian.PutUint64(p, lfg.Uint64())
 		p = p[8:]
 	}
@@ -74,7 +86,7 @@ func (lfg *LFG) Read(p []byte) (n int, err error) {
 	return n, nil
 }
 
-// Int63 generates an integer in the interval [0, 2**63 - 1]. This serves to
+// Int63 generates an integer in the interval [0, 2**63 - 1]. This exists to
 // satisfy the rand.Source interface.
 func (lfg *LFG) Int63() int64 {
 	return int64(lfg.Uint64() >> 1)
@@ -110,8 +122,8 @@ func (lfg *LFG) Restore(from io.Reader) (n int, err error) {
 	return n, nil
 }
 
-// Initial seed state. This is the state of the algorithm after 2**34
-// iterations initialized with 0, 1, ... 606.
+// lfgs0 is the initial seed state. This is the state of the algorithm after
+// 2**34 iterations initialized with 0, 1, ... 606.
 var lfgS0 = [lfgK]uint64{
 	0x9fc957b19b39ea28, 0x1d77b33b087c7c87, 0xb8f31fe09b7b9f67, 0xc11b2756053f5ed5,
 	0xbfc776182b975380, 0x4cb56bd60674d700, 0x1882170f226de11e, 0x2705fc53fd3b28e7,
