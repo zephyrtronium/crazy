@@ -61,7 +61,7 @@ recommended if avoidable.
 An example of running benchmarks might look like:
 
 ```
-> go test -bench /[KG] -benchtime 10s -timeout 1h
+> go test -short -bench /[KG] -benchtime 10s -timeout 1h
 goos: windows
 goarch: amd64
 pkg: github.com/zephyrtronium/crazy
@@ -83,3 +83,8 @@ In these results, the ns/op measures the time spent to fill an entire 1K or 1G
 block, not just to generate a single value). The MB/s throughput is generally a
 better indicator of performance. When benchmarking for yourself, use the
 `-benchtime` argument to `go test` in order to measure generation of more values.
+
+Note that `-short` is passed to `go test` as well. Some tests concerned with
+allowed ranges of Distributions and RNGs generate several hundred million MT64
+values. The `-short` flag tells them to generate closer to one million values
+instead.

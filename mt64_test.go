@@ -6,10 +6,9 @@ import (
 	"testing"
 )
 
-// MT64.SeedIV() uses .Seed(), so testing IV tests both.
-
 func TestMT64Seed(t *testing.T) {
 	mt := NewMT64()
+	// MT64.SeedIV() uses .Seed(), so testing IV tests both.
 	mt.SeedIV(nil)
 	mt.SeedIV([]byte{mt64N: 0})
 	mt.SeedIV([]byte{8 * mt64N: 0})
