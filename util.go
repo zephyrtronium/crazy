@@ -77,29 +77,25 @@ func AdaptRand64(src mathrand.Source64) Seeder {
 
 func (m math2crazy) Read(p []byte) (n int, err error) {
 	n = len(p)
-	for len(p) >= 8 {
+	for len(p) > 8 {
 		binary.LittleEndian.PutUint64(p, uint64(m.Int63()^m.Int63()<<1))
 		p = p[8:]
 	}
-	if len(p) > 0 {
-		b := [8]byte{}
-		binary.LittleEndian.PutUint64(b[:], uint64(m.Int63()))
-		copy(p, b[:])
-	}
+	b := [8]byte{}
+	binary.LittleEndian.PutUint64(b[:], uint64(m.Int63()))
+	copy(p, b[:])
 	return n, nil
 }
 
 func (m math642crazy) Read(p []byte) (n int, err error) {
 	n = len(p)
-	for len(p) >= 8 {
+	for len(p) > 8 {
 		binary.LittleEndian.PutUint64(p, m.Uint64())
 		p = p[8:]
 	}
-	if len(p) > 0 {
-		b := [8]byte{}
-		binary.LittleEndian.PutUint64(b[:], m.Uint64())
-		copy(p, b[:])
-	}
+	b := [8]byte{}
+	binary.LittleEndian.PutUint64(b[:], m.Uint64())
+	copy(p, b[:])
 	return n, nil
 }
 
@@ -165,6 +161,30 @@ func Shuffle(data Swapper, rng RNG) {
 	n := data.Len()
 	for i := 0; i < n; i++ {
 		data.Swap(i, int(rng.Uintn(uint(n))))
+	}
+}
+
+// ShuffleFloat64s permutes a slice of float64s into a random order.
+func ShuffleFloat64s(data []float64, rng RNG) {
+	for i := range data {
+		k := rng.Intn(len(data))
+		data[i], data[k] = data[k], data[i]
+	}
+}
+
+// ShuffleInts permutes a slice of ints into a random order.
+func ShuffleInts(data []int, rng RNG) {
+	for i := range data {
+		k := rng.Intn(len(data))
+		data[i], data[k] = data[k], data[i]
+	}
+}
+
+// ShuffleStrings permutes a slice of strings into a random order.
+func ShuffleStrings(data []string, rng RNG) {
+	for i := range data {
+		k := rng.Intn(len(data))
+		data[i], data[k] = data[k], data[i]
 	}
 }
 
