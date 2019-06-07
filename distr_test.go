@@ -23,7 +23,7 @@ func TestUniform0_1(t *testing.T) {
 	}
 	for i := 0; i < n; i++ {
 		if x := d.Next(); x < 0 || x >= 1 {
-
+			t.Fail()
 		}
 	}
 }
