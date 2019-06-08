@@ -51,3 +51,11 @@ func BenchmarkUniform(b *testing.B) {
 		_ = d.Next()
 	}
 }
+
+func BenchmarkUniform1_2Minus1(b *testing.B) {
+	d := Uniform1_2{CryptoSeeded(NewMT64(), mt64N)}
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		_ = d.Next() - 1
+	}
+}
