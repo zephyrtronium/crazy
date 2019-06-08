@@ -93,15 +93,19 @@ def solve(f, x0=None, nseg=128, verbose=False):
 		print('Done calculating r, v, x[i].', file=sys.stderr)
 	return r, tv, txi
 
-def tables(f, r, v, xi, symmetric, verbose=False):
+def tables(f, r, v, xi, symmetric, is64, verbose=False):
 	"""Calculate k[i], w[i], and f[i]."""
 	ki = [None] * len(xi)
 	wi = ki[:]
 	fi = ki[:]
-	if symmetric:
-		im = 2**31
+	if is64:
+		# The ziggurat user masks off bits to select the bin and symmetry.
+		im = 2 ** (63 - (len(xi)-1).bit_length())
 	else:
-		im = 2**32
+		if symmetric:
+			im = 2**31
+		else:
+			im = 2**32
 	for i, x in enumerate(xi):
 		if verbose and i & 7 == 0:
 			print('\r{0}/{1}'.format(i, len(xi)), end='', file=sys.stderr)
@@ -119,45 +123,59 @@ def tables(f, r, v, xi, symmetric, verbose=False):
 	assert all(v is not None for v in fi)
 	return ki, wi, fi
 
-def format(r, v, xi, ki, wi, fi, prefix):
-	'''Turn parameters into Go "pseudocode."'''
+def format(r, v, xi, ki, wi, fi, is64, prefix):
+	'''Turn parameters into Go code.'''
 	return '''
 
 const {p}R = {r}
 const {p}V = {v}
 
-var {p}X = [{n}]float32{{{xi}}}
+var {p}X = [{n}]float{e}{{{xi}}}
 
-var {p}K = [{n}]uint32{{{ki}}}
+var {p}K = [{n}]uint{e}{{{ki}}}
 
-var {p}W = [{n}]float32{{{wi}}}
+var {p}W = [{n}]float{e}{{{wi}}}
 
-var {p}F = [{n}]float32{{{fi}}}
+var {p}F = [{n}]float{e}{{{fi}}}
 
 '''.format(
 		r=r,
 		v=v,
 		n=len(xi),
-		xi=', '.join(str(i) for i in xi),
-		ki=', '.join(hex(int(i)) for i in ki),
-		wi=', '.join(str(i) for i in wi),
-		fi=', '.join(str(i) for i in fi),
+		xi=stringtable((float(x) for x in xi), False, is64),
+		ki=stringtable((int(k) for k in ki), True, is64),
+		wi=stringtable((float(w) for w in wi), False, is64),
+		fi=stringtable((float(f) for f in fi), False, is64),
+		e='64' if is64 else '32',
 		p=prefix,
 	)
 
-def main(fn, symmetric=False, x0=None, nseg=128, prefix='', prec=80, verbose=False):
+def stringtable(x, isint, is64):
+	'''Format a list with four elements per row.'''
+	s = ''
+	if isint:
+		fmt = '{:#016x}, ' if is64 else '{:#08x}, '
+	else:
+		fmt = '{:.17e}, '
+	for i, v in enumerate(x):
+		if i & 3 == 0:
+			s += '\n\t'
+		s += fmt.format(v)
+	return s + '\n'
+
+def main(fn, symmetric=False, x0=None, nseg=128, is64=True, prefix='', prec=80, verbose=False):
 	e = compile(fn, '<f>', 'eval')
 	globs = mpmath.__dict__
 	globs['__builtins__'] = None
 	lastprec, mpmath.mp.prec = mpmath.mp.prec, prec
 	f = lambda x: eval(e, globs, {'x': x})
 	r, v, xi = solve(f, x0, nseg, verbose)
-	ki, wi, fi = tables(f, r, v, xi, symmetric, verbose)
+	ki, wi, fi = tables(f, r, v, xi, symmetric, is64, verbose)
 	mpmath.mp.prec = lastprec
-	print(format(r, v, xi, ki, wi, fi, prefix))
+	print(format(r, v, xi, ki, wi, fi, is64, prefix))
 
 def parseargs(args):
-	symmetric, x0, nseg, prefix, prec, verbose = True, None, 128, '', 80, True
+	symmetric, x0, nseg, is64, prefix, prec, verbose = True, None, 128, True, '', 80, True
 	fn = None
 	helped = False
 	while args:
@@ -174,6 +192,9 @@ def parseargs(args):
 		elif args[0] == '-nseg':
 			nseg = int(args[1])
 			args = args[2:]
+		elif args[0] == '-32':
+			is64 = False
+			args = args[1:]
 		elif args[0] == '-prefix':
 			prefix = args[1]
 			args = args[2:]
@@ -189,7 +210,7 @@ def parseargs(args):
 		else:
 			raise ValueError('bad argument: ' + args[0])
 	assert fn is not None or helped, help
-	return (fn, symmetric, x0, nseg, prefix, prec, verbose), helped
+	return (fn, symmetric, x0, nseg, is64, prefix, prec, verbose), helped
 
 help = '''
 
@@ -203,6 +224,8 @@ Options:
 		use the given value as the initial guess for r
 	-nseg int
 		calculate the ziggurat with the given number of segments
+	-32
+		produce output for 32-bit random number generators
 	-prefix string
 		add a prefix to the generated constant and table names
 	-prec int
