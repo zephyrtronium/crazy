@@ -31,7 +31,7 @@ func expoPDF(x float64) float64 {
 }
 
 func expoTail(src Source) float64 {
-	return expoR - math.Log(Uniform1_2{src}.Next()-1)
+	return expoR - math.Log(Uniform0_1{src}.Next())
 }
 
 var expoZig = &Ziggurat{

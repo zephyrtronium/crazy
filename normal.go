@@ -32,10 +32,10 @@ func normalPDF(x float64) float64 {
 }
 
 func normalTail(src Source) float64 {
-	dist := Uniform1_2{src}
+	dist := Uniform0_1{src}
 	for {
-		x := -math.Log(dist.Next()-1) / normalR
-		y := -math.Log(dist.Next() - 1)
+		x := -math.Log(dist.Next()) / normalR
+		y := -math.Log(dist.Next())
 		if y+y >= x*x {
 			return x + normalR
 		}

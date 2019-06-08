@@ -37,7 +37,7 @@ func (z *Ziggurat) GenNext(src Source) float64 {
 		}
 		if i != 0 {
 			x := float64(j) * float64(z.W[i])
-			if z.F[i]+float32(Uniform1_2{src}.Next()-1)*(z.F[i-1]-z.F[i]) < float32(z.PDF(x)) {
+			if z.F[i]+float32(Uniform0_1{src}.Next())*(z.F[i-1]-z.F[i]) < float32(z.PDF(x)) {
 				return x
 			}
 		} else {
