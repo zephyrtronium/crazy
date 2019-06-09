@@ -6,7 +6,6 @@ import "math"
 // distribution.
 type Exponential struct {
 	Source
-	z    *Ziggurat
 	Rate float64
 }
 
@@ -16,13 +15,12 @@ func NewExponential(src Source, rate float64) Exponential {
 	return Exponential{
 		Source: src,
 		Rate:   rate,
-		z:      expoZig,
 	}
 }
 
 // Next generates an exponential variate.
 func (e Exponential) Next() float64 {
-	x := e.z.GenNext(e.Source)
+	x := expoZig.GenNext(e.Source)
 	return x / e.Rate
 }
 
@@ -34,7 +32,7 @@ func expoTail(src Source) float64 {
 	return expoR - math.Log(Uniform0_1{src}.Next())
 }
 
-var expoZig = &Ziggurat{
+var expoZig = Ziggurat{
 	PDF:      expoPDF,
 	Tail:     expoTail,
 	Mirrored: false,

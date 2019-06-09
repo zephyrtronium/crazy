@@ -6,7 +6,6 @@ import "math"
 // distribution.
 type Normal struct {
 	Source
-	z            *Ziggurat
 	Mean, StdDev float64
 }
 
@@ -17,13 +16,12 @@ func NewNormal(src Source, mean, stddev float64) Normal {
 		Source: src,
 		Mean:   mean,
 		StdDev: stddev,
-		z:      normalZig,
 	}
 }
 
 // Next generates a normal variate.
 func (n Normal) Next() float64 {
-	x := n.z.GenNext(n.Source)
+	x := normalZig.GenNext(n.Source)
 	return n.Mean + x*n.StdDev
 }
 
@@ -42,7 +40,7 @@ func normalTail(src Source) float64 {
 	}
 }
 
-var normalZig = &Ziggurat{
+var normalZig = Ziggurat{
 	PDF:      normalPDF,
 	Tail:     normalTail,
 	Mirrored: true,
