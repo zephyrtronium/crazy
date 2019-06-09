@@ -48,6 +48,19 @@ func TestXoroSave(t *testing.T) {
 	}
 }
 
+func TestXoroCopy(t *testing.T) {
+	xoro := CryptoSeeded(NewXoroshiro(), 16).(*Xoroshiro)
+	x, y := make([]byte, 8000), make([]byte, 8000)
+	for i := 0; i < 1024; i++ {
+		cp := xoro.Copy()
+		xoro.Read(x)
+		cp.Read(y)
+		if !bytes.Equal(x, y) {
+			t.Fail()
+		}
+	}
+}
+
 func BenchmarkXoroshiro(b *testing.B) {
 	xoro := CryptoSeeded(NewXoroshiro(), 16).(*Xoroshiro)
 	f := func(p []byte) func(b *testing.B) {

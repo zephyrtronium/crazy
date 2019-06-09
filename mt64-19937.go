@@ -160,3 +160,9 @@ func (mt *MT64) Restore(from io.Reader) (n int, err error) {
 	mt.i = int(p[len(p)-2])<<8 | int(p[len(p)-1])
 	return n, nil
 }
+
+// Copy creates a copy of the generator.
+func (mt *MT64) Copy() Copier {
+	m := *mt
+	return &m
+}

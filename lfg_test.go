@@ -48,6 +48,19 @@ func TestLFGSave(t *testing.T) {
 	}
 }
 
+func TestLFGCopy(t *testing.T) {
+	lfg := CryptoSeeded(NewLFG(), lfgK).(*LFG)
+	x, y := make([]byte, 8000), make([]byte, 8000)
+	for i := 0; i < 2*lfgK; i++ {
+		cp := lfg.Copy()
+		lfg.Read(x)
+		cp.Read(y)
+		if !bytes.Equal(x, y) {
+			t.Fail()
+		}
+	}
+}
+
 func BenchmarkLFG(b *testing.B) {
 	lfg := CryptoSeeded(NewLFG(), lfgK).(*LFG)
 	f := func(p []byte) func(b *testing.B) {

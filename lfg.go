@@ -122,6 +122,12 @@ func (lfg *LFG) Restore(from io.Reader) (n int, err error) {
 	return n, nil
 }
 
+// Copy creates a copy of the generator.
+func (lfg *LFG) Copy() Copier {
+	l := *lfg
+	return &l
+}
+
 // lfgs0 is the initial seed state. This is the state of the algorithm after
 // 2**34 iterations initialized with 0, 1, ... 606.
 var lfgS0 = [lfgK]uint64{

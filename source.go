@@ -31,3 +31,22 @@ type Saver interface {
 	// number of bytes read and any error that occurred.
 	Restore(from io.Reader) (n int, err error)
 }
+
+// A Copier is a PRNG that can produce a copy of itself that will generate the
+// same sequence of values. This interface is only necessary when using PRNGs
+// through interfaces; PRNG values can be copied directly by dereferencing.
+type Copier interface {
+	Seeder
+	// Copy creates a copy of the PRNG.
+	Copy() Copier
+}
+
+// A Jumper is a PRNG that can efficiently "jump" to a new state, such that the
+// output sequences of the pre- and post-jump states will not overlap for a
+// long time. This facilitates parallel scaling by ensuring that many separate
+// random processes each have unique contributions to a single problem.
+type Jumper interface {
+	Seeder
+	// Jump advances the state of the PRNG by 2**(64+n) iterations.
+	Jump(n uint)
+}

@@ -295,3 +295,9 @@ func (xoshi *Xoshiro) Restore(from io.Reader) (n int, err error) {
 func (xoshi *Xoshiro) Seed(x int64) {
 	SeedInt64(xoshi, x)
 }
+
+// Copy creates a copy of the generator.
+func (xoshi *Xoshiro) Copy() Copier {
+	x := *xoshi
+	return &x
+}

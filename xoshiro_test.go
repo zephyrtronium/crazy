@@ -49,6 +49,19 @@ func TestXoshiSave(t *testing.T) {
 	}
 }
 
+func TestXoshiCopy(t *testing.T) {
+	xoshi := CryptoSeeded(NewXoshiro(), 32).(*Xoshiro)
+	x, y := make([]byte, 8000), make([]byte, 8000)
+	for i := 0; i < 1024; i++ {
+		cp := xoshi.Copy()
+		xoshi.Read(x)
+		cp.Read(y)
+		if !bytes.Equal(x, y) {
+			t.Fail()
+		}
+	}
+}
+
 func BenchmarkXoshiro(b *testing.B) {
 	xoshi := CryptoSeeded(NewXoshiro(), 32).(*Xoshiro)
 	f := func(p []byte) func(b *testing.B) {

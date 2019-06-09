@@ -139,6 +139,12 @@ func (xoro *Xoroshiro) Int63() int64 {
 	return int64(xoro.Uint64() >> 1)
 }
 
+// Copy creates a copy of the generator.
+func (xoro *Xoroshiro) Copy() Copier {
+	x := *xoro
+	return &x
+}
+
 // Rexoroshiro is deprecated. Use Xoshiro instead.
 //
 // Rexoroshiro is the same as Xoroshiro but yields values that are bytewise
@@ -201,4 +207,10 @@ func (rexo *Rexoroshiro) Int63() int64 {
 	// Since the low bits have the highest quality, it makes sense to mask
 	// instead of shifting.
 	return int64(rexo.Uint64() & 0x7fffffffffffffff)
+}
+
+// Copy creates a copy of the generator.
+func (rexo *Rexoroshiro) Copy() Copier {
+	r := *rexo
+	return &r
 }

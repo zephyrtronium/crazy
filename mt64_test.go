@@ -47,6 +47,19 @@ func TestMT64Save(t *testing.T) {
 	}
 }
 
+func TestMT64Copy(t *testing.T) {
+	mt := CryptoSeeded(NewMT64(), mt64N).(*MT64)
+	x, y := make([]byte, 8000), make([]byte, 8000)
+	for i := 0; i < 2*mt64N; i++ {
+		cp := mt.Copy()
+		mt.Read(x)
+		cp.Read(y)
+		if !bytes.Equal(x, y) {
+			t.Fail()
+		}
+	}
+}
+
 func BenchmarkMT64(b *testing.B) {
 	mt := CryptoSeeded(NewMT64(), mt64N).(*MT64)
 	f := func(p []byte) func(b *testing.B) {
