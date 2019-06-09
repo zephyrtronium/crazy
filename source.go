@@ -47,6 +47,7 @@ type Copier interface {
 // random processes each have unique contributions to a single problem.
 type Jumper interface {
 	Seeder
-	// Jump advances the state of the PRNG by 2**(64+n) iterations.
-	Jump(n uint)
+	// Jump advances the state of the PRNG by a large number of iterations. At
+	// least 2**64 subsequent jumps produce non-overlapping subsequences.
+	Jump()
 }

@@ -301,3 +301,28 @@ func (xoshi *Xoshiro) Copy() Copier {
 	x := *xoshi
 	return &x
 }
+
+// Jump quickly advances the generator by 2**192 steps.
+func (xoshi *Xoshiro) Jump() {
+	var w, x, y, z uint64
+	for _, j := range xoshiroJump {
+		for i := 0; i < 64; i++ {
+			if j&1 != 0 {
+				w ^= xoshi.w
+				x ^= xoshi.x
+				y ^= xoshi.y
+				z ^= xoshi.z
+			}
+			xoshi.Uint64()
+			j >>= 1
+		}
+	}
+	xoshi.w = w
+	xoshi.x = x
+	xoshi.y = y
+	xoshi.z = z
+}
+
+var xoshiroJump = [4]uint64{
+	0x76e15d3efefdcbbf, 0xc5004e441c522fb3, 0x77710069854ee241, 0x39109bb02acbe635,
+}
