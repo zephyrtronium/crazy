@@ -326,3 +326,19 @@ func (xoshi *Xoshiro) Jump() {
 var xoshiroJump = [4]uint64{
 	0x76e15d3efefdcbbf, 0xc5004e441c522fb3, 0x77710069854ee241, 0x39109bb02acbe635,
 }
+
+// Reverse moves the generator backward one step.
+func (xoshi *Xoshiro) Reverse() {
+	xa := xoshi.x
+	xa ^= xa << 17
+	xa ^= xa << 34
+	ya := xoshi.y
+	ya ^= ya << 17
+	ya ^= ya << 34
+	xoshi.z = bits.RotateLeft64(xoshi.z, 19)
+	xoshi.y = xoshi.w ^ xoshi.x
+	xoshi.w ^= xoshi.z
+	xoshi.x = xa ^ ya
+	xoshi.z ^= xoshi.x
+	xoshi.y ^= xoshi.z
+}

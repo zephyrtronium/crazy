@@ -62,6 +62,19 @@ func TestXoshiCopy(t *testing.T) {
 	}
 }
 
+func TestXoshiReverse(t *testing.T) {
+	xoshi := CryptoSeeded(NewXoshiro(), 32).(*Xoshiro)
+	for i := 0; i < 1024; i++ {
+		a := xoshi.Uint64()
+		xoshi.Reverse()
+		b := xoshi.Uint64()
+		if a != b {
+			t.Fail()
+		}
+		xoshi.Uint64()
+	}
+}
+
 func BenchmarkXoshiro(b *testing.B) {
 	xoshi := CryptoSeeded(NewXoshiro(), 32).(*Xoshiro)
 	f := func(p []byte) func(b *testing.B) {
